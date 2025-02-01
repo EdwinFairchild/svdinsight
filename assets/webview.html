@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Content Security Policy: allow inline styles and scripts from https: -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https:; script-src 'unsafe-inline' 'unsafe-eval';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SVD Viewer</title>
+    <!-- Bulma CSS for a modern look -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  </head>
+  <body>
+    <section class="section">
+      <div class="container">
+        <h1 class="title">SVD Viewer</h1>
+        <!-- A file input that allows directory selection -->
+        <div class="field">
+          <label class="label">Select Directory</label>
+          <div class="control">
+            <input class="input" type="file" id="folderInput" webkitdirectory directory multiple>
+          </div>
+        </div>
+
+        <!-- Table to list the SVD files -->
+        <table class="table is-fullwidth is-striped" id="filesTable">
+          <thead>
+            <tr>
+              <th>File Name</th>
+              <th>Relative Path</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Table rows will be dynamically inserted here -->
+          </tbody>
+        </table>
+
+        <!-- A notification area for displaying the selected file -->
+        <div id="selectedFile" class="notification is-info" style="display: none;"></div>
+      </div>
+    </section>
+    <script>
+      // Get the VS Code API so we can send messages back to our extension.
+      const vscode = acquireVsCodeApi();
+
+      const folderInput = document.getElementById('folderInput');
+      const filesTableBody = document.querySelector('#filesTable tbody');
+      const selectedFileDiv = document.getElementById('selectedFile');
+
+      folderInput.addEventListener('change', (event) => {
+        const files = event.target.files;
+        // Clear any previous rows
+        filesTableBody.innerHTML = '';
+
+        // Loop through the FileList and add rows for files ending with ".svd"
+        for (const file of files) {
+          if (!file.name.endsWith('.svd')) continue;
+
+          const row = document.createElement('tr');
+          const nameCell = document.createElement('td');
+          nameCell.textContent = file.name;
+          const pathCell = document.createElement('td');
+          // Use the webkitRelativePath property (if available)
+          pathCell.textContent = file.webkitRelativePath || file.name;
+
+          row.appendChild(nameCell);
+          row.appendChild(pathCell);
+          row.style.cursor = 'pointer';
+
+          // When a row is clicked, show the file path and post a message to the extension.
+          row.addEventListener('click', () => {
+            const filePath = file.webkitRelativePath || file.name;
+            selectedFileDiv.textContent = "Selected file: " + filePath;
+            selectedFileDiv.style.display = 'block';
+            vscode.postMessage({ command: 'fileSelected', filePath });
+          });
+
+          filesTableBody.appendChild(row);
+        }
+      });
+    </script>
+  </body>
+</html>
