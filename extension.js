@@ -12,6 +12,7 @@ function activate(context) {
       vscode.ViewColumn.One,  // Editor column to show the new webview panel in
       {
         enableScripts: true,
+		retainContextWhenHidden: true, // <-- Add this line
         localResourceRoots: [
           vscode.Uri.joinPath(context.extensionUri, 'assets')
         ]
@@ -39,15 +40,18 @@ function activate(context) {
 function getWebviewContent(extensionUri, webview) {
   // Construct the path to your HTML file in the assets folder.
   const assetPath = vscode.Uri.joinPath(extensionUri, 'assets', 'webview.html');
-  let html = fs.readFileSync(assetPath.fsPath, 'utf8');
+  const bootstrapUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'assets', 'bootstrap.min.css'));
+  const bootstrapBundleUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'assets', 'bootstrap.bundle.min.js'));
+  let htmlContent = fs.readFileSync(assetPath.fsPath, 'utf8');
 
   // (Optional) You can replace placeholders if your HTML references local resources.
   // For example, if your HTML contains %SCRIPT_URI%, you might do:
   // const scriptPath = vscode.Uri.joinPath(extensionUri, 'assets', 'script.js');
   // const scriptUri = webview.asWebviewUri(scriptPath);
   // html = html.replace(/%SCRIPT_URI%/g, scriptUri.toString());
-
-  return html;
+  htmlContent = htmlContent.replace('{{bootstrapUri}}', bootstrapUri.toString());
+  htmlContent = htmlContent.replace('{{bootstrapBundleUri}}', bootstrapBundleUri.toString());
+  return htmlContent;
 }
 
 function deactivate() {}
